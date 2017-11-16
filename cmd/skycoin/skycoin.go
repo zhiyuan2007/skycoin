@@ -155,12 +155,12 @@ type Config struct {
 	// to show up as a peer
 	ConnectTo string
 
-	DBPath         string
-	Arbitrating    bool
-	RPCThreadNum   uint // rpc number
-	Logtofile      bool
-	Logtogui       bool
-	GuiLogBuffSize int
+	DBPath       string
+	Arbitrating  bool
+	RPCThreadNum uint // rpc number
+	Logtofile    bool
+	Logtogui     bool
+	LogBuffSize  int
 }
 
 func (c *Config) register() {
@@ -247,7 +247,7 @@ func (c *Config) register() {
 		"Run on localhost and only connect to localhost peers")
 	flag.BoolVar(&c.Arbitrating, "arbitrating", c.Arbitrating, "Run node in arbitrating mode")
 	flag.BoolVar(&c.Logtogui, "logtogui", true, "log to gui")
-	flag.IntVar(&c.GuiLogBuffSize, "guilogsize", c.GuiLogBuffSize, "Log size saved in memeory for gui show")
+	flag.IntVar(&c.LogBuffSize, "guilogsize", c.LogBuffSize, "Log size saved in memeory for gui show")
 }
 
 var devConfig = Config{
@@ -317,8 +317,8 @@ var devConfig = Config{
 	HTTPProf: false,
 	// Will force it to connect to this ip:port, instead of waiting for it
 	// to show up as a peer
-	ConnectTo:      "",
-	GuiLogBuffSize: 20000,
+	ConnectTo:   "",
+	LogBuffSize: 20000,
 }
 
 // Parse prepare the config
@@ -565,23 +565,25 @@ func Run(c *Config) {
 		return
 	}
 
-	closelog, err := initLogging(c.DataDirectory, c.LogLevel, c.ColorLog, c.Logtofile, c.Logtogui, &d.GuiLogBuff)
+	closelog, err := initLogging(c.DataDirectory, c.LogLevel, c.ColorLog, c.Logtofile, c.Logtogui, &d.LogBuff)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	go func(b *bytes.Buffer) {
 		for {
-			for b.Len() > c.GuiLogBuffSize {
+			for b.Len() > c.LogBuffSize {
 				v, err := b.ReadString(byte('\n'))
 				if err != nil {
 					fmt.Printf("read buffer err %v\n", err)
 					continue
 				}
+				fmt.Printf("output info is----:%s", v)
 			}
+			fmt.Printf("buffer info len----:%d\n", b.Len())
 			time.Sleep(time.Second)
 		}
-	}(&d.GuiLogBuff)
+	}(&d.LogBuff)
 
 	errC := make(chan error, 1)
 

@@ -129,7 +129,7 @@ func NewGUIMux(appLoc string, daemon *daemon.Daemon) *http.ServeMux {
 
 	// get balance of addresses
 	mux.HandleFunc("/balance", getBalanceHandler(daemon.Gateway))
-	mux.HandleFunc("/guilog", getGuiLogHandler(&daemon.GuiLogBuff))
+	mux.HandleFunc("/logs", getLogsHandler(&daemon.LogBuff))
 
 	// Wallet interface
 	RegisterWalletHandlers(mux, daemon.Gateway)
@@ -256,29 +256,43 @@ func versionHandler(gateway *daemon.Gateway) http.HandlerFunc {
 	}
 }
 
-func getGuiLogHandler(guilogbuf *bytes.Buffer) http.HandlerFunc {
+func getLogsHandler(logbuf *bytes.Buffer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			wh.Error405(w)
 			return
 		}
 
-		lines := r.FormValue("lines")
-		linenum, err := strconv.Atoi(lines)
-		if err != nil {
-			logger.Error("Get guilog failed: %v", err)
-			wh.Error500(w)
-		}
-		guilogs := []string{}
-		for i := 0; i < linenum; i++ {
-			logdata, err := guilogbuf.ReadString(byte('\n'))
+		var linenum int
+		var err error
+		defaultLineNum := 10 // default line numbers
+		if lines := r.FormValue("lines"); lines == "" {
+			linenum = defaultLineNum
+		} else {
+			linenum, err = strconv.Atoi(lines)
 			if err != nil {
-				fmt.Printf("read buffer err %v\n", err)
+				linenum = defaultLineNum
+			}
+		}
+		keyword := r.FormValue("include")
+		excludeKeyword := r.FormValue("exclude")
+		logs := []string{}
+		logList := strings.Split(logbuf.String(), "\n")
+		for _, logInfo := range logList {
+			if excludeKeyword == "" {
+				if strings.Contains(logInfo, keyword) {
+					logs = append(logs, fmt.Sprintf("%s", logInfo))
+				}
+			} else {
+				if strings.Contains(logInfo, keyword) && !strings.Contains(logInfo, excludeKeyword) {
+					logs = append(logs, fmt.Sprintf("%s", logInfo))
+				}
+			}
+			if len(logs) >= linenum {
 				break
 			}
-			guilogs = append(guilogs, logdata)
 		}
 
-		wh.SendOr404(w, guilogs)
+		wh.SendOr404(w, logs)
 	}
 }
