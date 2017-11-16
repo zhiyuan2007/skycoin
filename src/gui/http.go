@@ -1,12 +1,14 @@
 package gui
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/skycoin/skycoin/src/cipher"
@@ -127,6 +129,7 @@ func NewGUIMux(appLoc string, daemon *daemon.Daemon) *http.ServeMux {
 
 	// get balance of addresses
 	mux.HandleFunc("/balance", getBalanceHandler(daemon.Gateway))
+	mux.HandleFunc("/guilog", getGuiLogHandler(&daemon.GuiLogBuff))
 
 	// Wallet interface
 	RegisterWalletHandlers(mux, daemon.Gateway)
@@ -250,5 +253,32 @@ func versionHandler(gateway *daemon.Gateway) http.HandlerFunc {
 		}
 
 		wh.SendOr404(w, gateway.GetBuildInfo())
+	}
+}
+
+func getGuiLogHandler(guilogbuf *bytes.Buffer) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			wh.Error405(w)
+			return
+		}
+
+		lines := r.FormValue("lines")
+		linenum, err := strconv.Atoi(lines)
+		if err != nil {
+			logger.Error("Get guilog failed: %v", err)
+			wh.Error500(w)
+		}
+		guilogs := []string{}
+		for i := 0; i < linenum; i++ {
+			logdata, err := guilogbuf.ReadString(byte('\n'))
+			if err != nil {
+				fmt.Printf("read buffer err %v\n", err)
+				break
+			}
+			guilogs = append(guilogs, logdata)
+		}
+
+		wh.SendOr404(w, guilogs)
 	}
 }

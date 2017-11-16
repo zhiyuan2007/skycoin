@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -154,10 +155,12 @@ type Config struct {
 	// to show up as a peer
 	ConnectTo string
 
-	DBPath       string
-	Arbitrating  bool
-	RPCThreadNum uint // rpc number
-	Logtofile    bool
+	DBPath         string
+	Arbitrating    bool
+	RPCThreadNum   uint // rpc number
+	Logtofile      bool
+	Logtogui       bool
+	GuiLogBuffSize int
 }
 
 func (c *Config) register() {
@@ -243,6 +246,8 @@ func (c *Config) register() {
 	flag.BoolVar(&c.LocalhostOnly, "localhost-only", c.LocalhostOnly,
 		"Run on localhost and only connect to localhost peers")
 	flag.BoolVar(&c.Arbitrating, "arbitrating", c.Arbitrating, "Run node in arbitrating mode")
+	flag.BoolVar(&c.Logtogui, "logtogui", true, "log to gui")
+	flag.IntVar(&c.GuiLogBuffSize, "guilogsize", c.GuiLogBuffSize, "Log size saved in memeory for gui show")
 }
 
 var devConfig = Config{
@@ -312,7 +317,8 @@ var devConfig = Config{
 	HTTPProf: false,
 	// Will force it to connect to this ip:port, instead of waiting for it
 	// to show up as a peer
-	ConnectTo: "",
+	ConnectTo:      "",
+	GuiLogBuffSize: 20000,
 }
 
 // Parse prepare the config
@@ -413,7 +419,7 @@ func catchDebug() {
 }
 
 // init logging settings
-func initLogging(dataDir string, level string, color, logtofile bool) (func(), error) {
+func initLogging(dataDir string, level string, color, logtofile, logtogui bool, guilogbuf *bytes.Buffer) (func(), error) {
 	logCfg := logging.DevLogConfig(logModules)
 	logCfg.Format = logFormat
 	logCfg.Colors = color
@@ -440,6 +446,9 @@ func initLogging(dataDir string, level string, color, logtofile bool) (func(), e
 		logCfg.Output = io.MultiWriter(os.Stdout, fd)
 	}
 
+	if logtogui {
+		logCfg.Output = io.MultiWriter(os.Stdout, guilogbuf)
+	}
 	logCfg.InitLogger()
 
 	return func() {
@@ -531,12 +540,6 @@ func Run(c *Config) {
 
 	initProfiling(c.HTTPProf, c.ProfileCPU, c.ProfileCPUFile)
 
-	closelog, err := initLogging(c.DataDirectory, c.LogLevel, c.ColorLog, c.Logtofile)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
 	var wg sync.WaitGroup
 
 	// If the user Ctrl-C's, shutdown properly
@@ -561,6 +564,24 @@ func Run(c *Config) {
 		logger.Error("%v", err)
 		return
 	}
+
+	closelog, err := initLogging(c.DataDirectory, c.LogLevel, c.ColorLog, c.Logtofile, c.Logtogui, &d.GuiLogBuff)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	go func(b *bytes.Buffer) {
+		for {
+			for b.Len() > c.GuiLogBuffSize {
+				v, err := b.ReadString(byte('\n'))
+				if err != nil {
+					fmt.Printf("read buffer err %v\n", err)
+					continue
+				}
+			}
+			time.Sleep(time.Second)
+		}
+	}(&d.GuiLogBuff)
 
 	errC := make(chan error, 1)
 

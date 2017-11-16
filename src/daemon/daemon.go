@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net"
@@ -191,6 +192,7 @@ type Daemon struct {
 	Visor    *Visor
 
 	DefaultConnections []string
+	GuiLogBuff         bytes.Buffer
 
 	// Separate index of outgoing connections. The pool aggregates all
 	// connections.
