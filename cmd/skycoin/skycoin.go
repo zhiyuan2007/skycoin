@@ -247,7 +247,7 @@ func (c *Config) register() {
 		"Run on localhost and only connect to localhost peers")
 	flag.BoolVar(&c.Arbitrating, "arbitrating", c.Arbitrating, "Run node in arbitrating mode")
 	flag.BoolVar(&c.Logtogui, "logtogui", true, "log to gui")
-	flag.IntVar(&c.LogBuffSize, "guilogsize", c.LogBuffSize, "Log size saved in memeory for gui show")
+	flag.IntVar(&c.LogBuffSize, "logbufsize", c.LogBuffSize, "Log size saved in memeory for gui show")
 }
 
 var devConfig = Config{
@@ -419,7 +419,7 @@ func catchDebug() {
 }
 
 // init logging settings
-func initLogging(dataDir string, level string, color, logtofile, logtogui bool, guilogbuf *bytes.Buffer) (func(), error) {
+func initLogging(dataDir string, level string, color, logtofile, logtogui bool, logbuf *bytes.Buffer) (func(), error) {
 	logCfg := logging.DevLogConfig(logModules)
 	logCfg.Format = logFormat
 	logCfg.Colors = color
@@ -443,11 +443,15 @@ func initLogging(dataDir string, level string, color, logtofile, logtogui bool, 
 			return nil, err
 		}
 
-		logCfg.Output = io.MultiWriter(os.Stdout, fd)
-	}
-
-	if logtogui {
-		logCfg.Output = io.MultiWriter(os.Stdout, guilogbuf)
+		if logtogui {
+			logCfg.Output = io.MultiWriter(os.Stdout, fd, logbuf)
+		} else {
+			logCfg.Output = io.MultiWriter(os.Stdout, fd)
+		}
+	} else {
+		if logtogui {
+			logCfg.Output = io.MultiWriter(os.Stdout, logbuf)
+		}
 	}
 	logCfg.InitLogger()
 
@@ -570,20 +574,20 @@ func Run(c *Config) {
 		fmt.Println(err)
 		return
 	}
-	go func(b *bytes.Buffer) {
-		for {
-			for b.Len() > c.LogBuffSize {
-				v, err := b.ReadString(byte('\n'))
-				if err != nil {
-					fmt.Printf("read buffer err %v\n", err)
-					continue
+	if c.Logtogui {
+		go func(b *bytes.Buffer) {
+			for {
+				for b.Len() > c.LogBuffSize {
+					v, err := b.ReadString(byte('\n'))
+					if err != nil {
+						fmt.Printf("read buffer err %v\n", err)
+						continue
+					}
 				}
-				fmt.Printf("output info is----:%s", v)
+				time.Sleep(time.Second)
 			}
-			fmt.Printf("buffer info len----:%d\n", b.Len())
-			time.Sleep(time.Second)
-		}
-	}(&d.LogBuff)
+		}(&d.LogBuff)
+	}
 
 	errC := make(chan error, 1)
 

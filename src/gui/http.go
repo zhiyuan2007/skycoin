@@ -256,6 +256,24 @@ func versionHandler(gateway *daemon.Gateway) http.HandlerFunc {
 	}
 }
 
+/*
+
+attrActualLog remove color char in log
+origin: "\u001b[36m[skycoin.daemon:DEBUG] Trying to connect to 47.88.33.156:6000\u001b[0m",
+*/
+func attrActualLog(logInfo string) string {
+	var actualLog string
+	if strings.HasPrefix(logInfo, "[skycoin") {
+		if strings.HasSuffix(logInfo, "[0m") {
+			actualLog = logInfo[0 : len(logInfo)-4]
+		} else {
+			actualLog = logInfo
+		}
+	} else {
+		actualLog = logInfo[5 : len(logInfo)-4]
+	}
+	return actualLog
+}
 func getLogsHandler(logbuf *bytes.Buffer) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -263,12 +281,10 @@ func getLogsHandler(logbuf *bytes.Buffer) http.HandlerFunc {
 			return
 		}
 
-		var linenum int
 		var err error
 		defaultLineNum := 10 // default line numbers
-		if lines := r.FormValue("lines"); lines == "" {
-			linenum = defaultLineNum
-		} else {
+		linenum := defaultLineNum
+		if lines := r.FormValue("lines"); lines != "" {
 			linenum, err = strconv.Atoi(lines)
 			if err != nil {
 				linenum = defaultLineNum
@@ -281,11 +297,11 @@ func getLogsHandler(logbuf *bytes.Buffer) http.HandlerFunc {
 		for _, logInfo := range logList {
 			if excludeKeyword == "" {
 				if strings.Contains(logInfo, keyword) {
-					logs = append(logs, fmt.Sprintf("%s", logInfo))
+					logs = append(logs, attrActualLog(logInfo))
 				}
 			} else {
 				if strings.Contains(logInfo, keyword) && !strings.Contains(logInfo, excludeKeyword) {
-					logs = append(logs, fmt.Sprintf("%s", logInfo))
+					logs = append(logs, attrActualLog(logInfo))
 				}
 			}
 			if len(logs) >= linenum {
