@@ -582,6 +582,7 @@ func Run(c *Config) {
 					logger.Info("Logbuff service closed normally")
 					return
 				case <-time.After(1 * time.Second): //insure logbuff size not exceed required size, like lru
+					logger.Debug("logbuffer size %d\n", b.Len())
 					for b.Len() > c.LogBuffSize {
 						_, err := b.ReadString(byte('\n')) //discard one line
 						if err != nil {
