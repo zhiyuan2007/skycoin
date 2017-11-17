@@ -575,18 +575,23 @@ func Run(c *Config) {
 		return
 	}
 	if c.Logtogui {
-		go func(b *bytes.Buffer) {
+		go func(b *bytes.Buffer, quit chan struct{}) {
 			for {
-				for b.Len() > c.LogBuffSize {
-					v, err := b.ReadString(byte('\n'))
-					if err != nil {
-						fmt.Printf("read buffer err %v\n", err)
-						continue
+				select {
+				case <-quit:
+					logger.Info("Logbuff service closed normally")
+					return
+				case <-time.After(1 * time.Second): //insure logbuff size not exceed required size, like lru
+					for b.Len() > c.LogBuffSize {
+						_, err := b.ReadString(byte('\n')) //discard one line
+						if err != nil {
+							logger.Info("read logbuffer err %v\n", err)
+							continue
+						}
 					}
 				}
-				time.Sleep(time.Second)
 			}
-		}(&d.LogBuff)
+		}(&d.LogBuff, quit)
 	}
 
 	errC := make(chan error, 1)
