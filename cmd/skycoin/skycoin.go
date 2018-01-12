@@ -694,6 +694,7 @@ func Run(c *Config) {
 		}
 	}
 
+	/*
 		time.Sleep(5)
 		tx := InitTransaction()
 		//_ = tx
@@ -701,7 +702,6 @@ func Run(c *Config) {
 		if err != nil {
 			log.Panic(err)
 		}
-	/*
 		*/
 
 		//first transaction
