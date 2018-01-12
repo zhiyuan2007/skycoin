@@ -23,12 +23,12 @@ import (
 // Commands all cmds that we support
 
 const (
-	Version           = "0.20.3"
+	Version           = "0.20.9"
 	walletExt         = ".wlt"
 	defaultCoin       = "skycoin"
 	defaultWalletName = "$COIN_cli" + walletExt
-	defaultWalletDir  = "$HOME/.$COIN/wallets"
-	defaultRpcAddress = "127.0.0.1:6430"
+	defaultWalletDir  = "$HOME/.$COIN_test/wallets"
+	defaultRpcAddress = "127.0.0.1:16430"
 )
 
 var (
@@ -119,10 +119,7 @@ func LoadConfig() (Config, error) {
 	home := file.UserHome()
 
 	// get wallet dir from env
-	wltDir := os.Getenv("WALLET_DIR")
-	if wltDir == "" {
-		wltDir = fmt.Sprintf("%s/.%s/wallets", home, coin)
-	}
+	wltDir := fmt.Sprintf("%s/.%s_test/wallets", home, coin)
 
 	// get wallet name from env
 	wltName := os.Getenv("WALLET_NAME")
@@ -134,7 +131,7 @@ func LoadConfig() (Config, error) {
 		return Config{}, ErrWalletName
 	}
 
-	dataDir := filepath.Join(home, fmt.Sprintf(".%s", coin))
+	dataDir := filepath.Join(home, fmt.Sprintf(".%s_test", coin))
 
 	return Config{
 		WalletDir:  wltDir,

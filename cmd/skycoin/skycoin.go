@@ -53,7 +53,7 @@ var (
 	}
 
 	// GenesisSignatureStr hex string of genesis signature
-	GenesisSignatureStr = "b4e693d96e7da16d535189c1db85333a0ba3b1342147d751186d581240a6dc726d75ecfc1f3c4d39e0c9bb7cfbb63446047809688de02ea9554a68ead3854df600"
+	GenesisSignatureStr = "676b30119d17e630bfdafa9887729acf7573c50775e7c73a16503ff3faba16c92e0952cab52be4ed4a2852eee1a1cf371e37479e098b0e7e15479c0789ad835300"
 	// GenesisAddressStr genesis address string
 	GenesisAddressStr = "jFAUc1AUeAgVjc4Br5mv3baaQkuiKZ7maw"
 	// BlockchainPubkeyStr pubic key string
@@ -209,7 +209,7 @@ func (c *Config) register() {
 	flag.BoolVar(&c.PrintWebInterfaceAddress, "print-web-interface-address",
 		c.PrintWebInterfaceAddress, "print configured web interface address and exit")
 	flag.StringVar(&c.DataDirectory, "data-dir", c.DataDirectory,
-		"directory to store app data (defaults to ~/.skycoin)")
+		"directory to store app data (defaults to ~/.skycoin_test)")
 	flag.StringVar(&c.ConnectTo, "connect-to", c.ConnectTo,
 		"connect to this ip only")
 	flag.BoolVar(&c.ProfileCPU, "profile-cpu", c.ProfileCPU,
@@ -298,7 +298,7 @@ var devConfig = Config{
 
 	LaunchBrowser: true,
 	// Data directory holds app data -- defaults to ~/.skycoin
-	DataDirectory: ".skycoin-test",
+	DataDirectory: ".skycoin_test",
 	// Web GUI static resources
 	GUIDirectory: "./src/gui/static/",
 	// Logging
@@ -697,15 +697,15 @@ func Run(c *Config) {
 	/*
 		time.Sleep(5)
 		tx := InitTransaction()
-		_ = tx
-		err, _ = d.Visor.Visor.InjectTxn(tx)
+		//_ = tx
+		v, err := d.Visor.Visor.InjectTxn(tx)
 		if err != nil {
 			log.Panic(err)
 		}
-	*/
+		*/
 
-	/*
 		//first transaction
+		/*
 		if c.RunMaster == true {
 			go func() {
 				for d.Visor.Visor.Blockchain.Head().Seq() < 2 {
@@ -713,12 +713,12 @@ func Run(c *Config) {
 					tx := InitTransaction()
 					err, _ := d.Visor.Visor.InjectTxn(tx)
 					if err != nil {
-						//log.Panic(err)
+						log.Panic(err)
 					}
 				}
 			}()
 		}
-	*/
+		*/
 
 	select {
 	case <-quit:
@@ -746,7 +746,7 @@ func main() {
 func InitTransaction() coin.Transaction {
 	var tx coin.Transaction
 
-	output := cipher.MustSHA256FromHex("043836eb6f29aaeb8b9bfce847e07c159c72b25ae17d291f32125e7f1912e2a0")
+	output := cipher.MustSHA256FromHex("b5c24eb01d9856fc47e6b12939d43e89a1b6931f579ad76903f261976dfb7a22")
 	tx.PushInput(output)
 
 	addrs := visor.GetDistributionAddresses()
@@ -769,12 +769,14 @@ func InitTransaction() coin.Transaction {
 		seckey := ""
 		seckeys[0] = cipher.MustSecKeyFromHex(seckey)
 		tx.SignInputs(seckeys)
-	*/
+		*/
 
+	/*
 	txs := make([]cipher.Sig, 1)
-	sig := "ed9bd7a31fe30b9e2d53b35154233dfdf48aaaceb694a07142f84cdf4f5263d21b723f631817ae1c1f735bea13f0ff2a816e24a53ccb92afae685fdfc06724de01"
+	sig := "8e5919e36ad842b1b350468cc75408652e562075a693b096598e3d5e29fd6bf26c1030ef583887bf347b22d2d17ac044bf7355244ca71179d997d7b56aac831e00"
 	txs[0] = cipher.MustSigFromHex(sig)
 	tx.Sigs = txs
+	*/
 
 	tx.UpdateHeader()
 
