@@ -53,11 +53,11 @@ var (
 	}
 
 	// GenesisSignatureStr hex string of genesis signature
-	GenesisSignatureStr = "eb10468d10054d15f2b6f8946cd46797779aa20a7617ceb4be884189f219bc9a164e56a5b9f7bec392a804ff3740210348d73db77a37adb542a8e08d429ac92700"
+	GenesisSignatureStr = "b4e693d96e7da16d535189c1db85333a0ba3b1342147d751186d581240a6dc726d75ecfc1f3c4d39e0c9bb7cfbb63446047809688de02ea9554a68ead3854df600"
 	// GenesisAddressStr genesis address string
-	GenesisAddressStr = "2jBbGxZRGoQG1mqhPBnXnLTxK6oxsTf8os6"
+	GenesisAddressStr = "jFAUc1AUeAgVjc4Br5mv3baaQkuiKZ7maw"
 	// BlockchainPubkeyStr pubic key string
-	BlockchainPubkeyStr = "0328c576d3f420e7682058a981173a4b374c7cc5ff55bf394d3cf57059bbe6456a"
+	BlockchainPubkeyStr = "0371091978d33f866de3c17020a91040dc7ea0f0d28b492943d549549baef8c2f8"
 	// BlockchainSeckeyStr empty private key string
 	BlockchainSeckeyStr = ""
 
@@ -68,14 +68,8 @@ var (
 
 	// DefaultConnections the default trust node addresses
 	DefaultConnections = []string{
-		"118.178.135.93:6000",
-		"47.88.33.156:6000",
-		"121.41.103.148:6000",
-		"120.77.69.188:6000",
-		"104.237.142.206:6000",
-		"176.58.126.224:6000",
-		"172.104.85.6:6000",
-		"139.162.7.132:6000",
+		"118.190.40.103:16000",
+		"121.42.24.199:16000",
 	}
 )
 
@@ -278,7 +272,7 @@ var devConfig = Config{
 	// public interface
 	Address: "",
 	//gnet uses this for TCP incoming and outgoing
-	Port: 6000,
+	Port: 16000,
 	// MaxOutgoingConnections is the maximum outgoing connections allowed.
 	MaxOutgoingConnections: 16,
 	DownloadPeerList:       false,
@@ -290,7 +284,7 @@ var devConfig = Config{
 	//AddressVersion: "test",
 	// Remote web interface
 	WebInterface:             true,
-	WebInterfacePort:         6420,
+	WebInterfacePort:         16420,
 	WebInterfaceAddr:         "127.0.0.1",
 	WebInterfaceCert:         "",
 	WebInterfaceKey:          "",
@@ -298,13 +292,13 @@ var devConfig = Config{
 	PrintWebInterfaceAddress: false,
 
 	RPCInterface:     true,
-	RPCInterfacePort: 6430,
+	RPCInterfacePort: 16430,
 	RPCInterfaceAddr: "127.0.0.1",
 	RPCThreadNum:     5,
 
 	LaunchBrowser: true,
 	// Data directory holds app data -- defaults to ~/.skycoin
-	DataDirectory: ".skycoin",
+	DataDirectory: ".skycoin-test",
 	// Web GUI static resources
 	GUIDirectory: "./src/gui/static/",
 	// Logging
