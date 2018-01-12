@@ -53,7 +53,7 @@ var (
 	}
 
 	// GenesisSignatureStr hex string of genesis signature
-	GenesisSignatureStr = "676b30119d17e630bfdafa9887729acf7573c50775e7c73a16503ff3faba16c92e0952cab52be4ed4a2852eee1a1cf371e37479e098b0e7e15479c0789ad835300"
+	GenesisSignatureStr = "073fc72f05c7256109db1c94a3d685063760524d14ee233e535e1197cc5ea5b64339e10e037dc079ea861867d1bfb714cc83869bd0ba016763f11510861e207701"
 	// GenesisAddressStr genesis address string
 	GenesisAddressStr = "jFAUc1AUeAgVjc4Br5mv3baaQkuiKZ7maw"
 	// BlockchainPubkeyStr pubic key string
@@ -62,9 +62,9 @@ var (
 	BlockchainSeckeyStr = ""
 
 	// GenesisTimestamp genesis block create unix time
-	GenesisTimestamp uint64 = 1426562704
+	GenesisTimestamp uint64 =1502217329 
 	// GenesisCoinVolume represents the coin capacity
-	GenesisCoinVolume uint64 = 100e12
+	GenesisCoinVolume uint64 = 2800e12
 
 	// DefaultConnections the default trust node addresses
 	DefaultConnections = []string{
@@ -694,14 +694,14 @@ func Run(c *Config) {
 		}
 	}
 
-	/*
 		time.Sleep(5)
 		tx := InitTransaction()
 		//_ = tx
-		v, err := d.Visor.Visor.InjectTxn(tx)
+		_, err = d.Visor.Visor.InjectTxn(tx)
 		if err != nil {
 			log.Panic(err)
 		}
+	/*
 		*/
 
 		//first transaction
@@ -746,17 +746,17 @@ func main() {
 func InitTransaction() coin.Transaction {
 	var tx coin.Transaction
 
-	output := cipher.MustSHA256FromHex("b5c24eb01d9856fc47e6b12939d43e89a1b6931f579ad76903f261976dfb7a22")
+	output := cipher.MustSHA256FromHex("6588ad37436d864d042c1ac872ef1f7d344e1f061f91d09dce1b6b767d9e1d5e")
 	tx.PushInput(output)
 
 	addrs := visor.GetDistributionAddresses()
 
-	if len(addrs) != 100 {
+	if len(addrs) != 280 {
 		log.Panic("Should have 100 distribution addresses")
 	}
 
 	// 1 million per address, measured in droplets
-	if visor.DistributionAddressInitialBalance != 1e6 {
+	if visor.DistributionAddressInitialBalance != 10e6 {
 		log.Panic("visor.DistributionAddressInitialBalance expected to be 1e6*1e6")
 	}
 
@@ -764,12 +764,10 @@ func InitTransaction() coin.Transaction {
 		addr := cipher.MustDecodeBase58Address(addrs[i])
 		tx.PushOutput(addr, visor.DistributionAddressInitialBalance*1e6, 1)
 	}
-	/*
 		seckeys := make([]cipher.SecKey, 1)
-		seckey := ""
+		seckey := "44fc9f8cf6fae0a4e3c09a8edbec24225f6863a5e43707c6e2f42858cae8ce9b"
 		seckeys[0] = cipher.MustSecKeyFromHex(seckey)
 		tx.SignInputs(seckeys)
-		*/
 
 	/*
 	txs := make([]cipher.Sig, 1)
