@@ -68,8 +68,9 @@ var (
 
 	// DefaultConnections the default trust node addresses
 	DefaultConnections = []string{
+		"116.62.60.254:16000",
+		"182.92.180.92:16000",
 		"118.190.40.103:16000",
-		"121.42.24.199:16000",
 	}
 )
 
@@ -702,10 +703,10 @@ func Run(c *Config) {
 		if err != nil {
 			log.Panic(err)
 		}
-		*/
+	*/
 
-		//first transaction
-		/*
+	//first transaction
+	/*
 		if c.RunMaster == true {
 			go func() {
 				for d.Visor.Visor.Blockchain.Head().Seq() < 2 {
@@ -718,7 +719,7 @@ func Run(c *Config) {
 				}
 			}()
 		}
-		*/
+	*/
 
 	select {
 	case <-quit:
@@ -769,13 +770,13 @@ func InitTransaction() coin.Transaction {
 		seckey := ""
 		seckeys[0] = cipher.MustSecKeyFromHex(seckey)
 		tx.SignInputs(seckeys)
-		*/
+	*/
 
 	/*
-	txs := make([]cipher.Sig, 1)
-	sig := "8e5919e36ad842b1b350468cc75408652e562075a693b096598e3d5e29fd6bf26c1030ef583887bf347b22d2d17ac044bf7355244ca71179d997d7b56aac831e00"
-	txs[0] = cipher.MustSigFromHex(sig)
-	tx.Sigs = txs
+		txs := make([]cipher.Sig, 1)
+		sig := "8e5919e36ad842b1b350468cc75408652e562075a693b096598e3d5e29fd6bf26c1030ef583887bf347b22d2d17ac044bf7355244ca71179d997d7b56aac831e00"
+		txs[0] = cipher.MustSigFromHex(sig)
+		tx.Sigs = txs
 	*/
 
 	tx.UpdateHeader()
