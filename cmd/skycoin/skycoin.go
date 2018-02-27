@@ -246,7 +246,7 @@ func (c *Config) register() {
 		"genesis block timestamp")
 
 	flag.StringVar(&c.WalletDirectory, "wallet-dir", c.WalletDirectory,
-		"location of the wallet files. Defaults to ~/.skycoin/wallet/")
+		"location of the wallet files. Defaults to ~/.skycoin_test/wallet/")
 	flag.IntVar(&c.MaxOutgoingConnections, "max-outgoing-connections", 16, "The maximum outgoing connections allowed")
 	flag.IntVar(&c.PeerlistSize, "peerlist-size", 65535, "The peer list size")
 	flag.DurationVar(&c.OutgoingConnectionsRate, "connection-rate",
