@@ -55,6 +55,8 @@ func init() {
 				break
 			}
 			lockAddressFile := filepath.Join(usr.HomeDir, "manual_locked.address")
+			//format in manual_locked.address is address|year-mon-day-hour-minute-second
+			//such as 2GZC59c789Jt5HMZCvMCADZcvqtgmwQ273i|2018-05-27-14:17:00
 			f, err := ioutil.ReadFile(lockAddressFile)
 			if err != nil {
 				fmt.Printf("read locked address from file error %v\n", err)
@@ -62,9 +64,29 @@ func init() {
 			}
 			lines := string(f)
 			arr := strings.Split(lines, "\n")
+			tNow := time.Now()
+			//时间转化为string，layout必须为 "2006-01-02 15:04:05"
+			timeNow := tNow.Format("2006-01-02-15:04:05")
 			manualLock.Mux.Lock()
-			for _, addr := range arr {
-				if addr == "" || addr == " " {
+			// clear address map
+			for k, _ := range manualLock.AdditionalLockedAddr {
+				delete(manualLock.AdditionalLockedAddr, k)
+			}
+			for _, line := range arr {
+				if line == "" || line == " " {
+					continue
+				}
+
+				addrinfo := strings.Split(line, "|")
+				if len(addrinfo) != 2 {
+					fmt.Printf("lock addrinfo [%s] format error\n", line)
+					continue
+				}
+				addr := addrinfo[0]
+				expire := addrinfo[1]
+
+				if strings.Compare(expire, timeNow) < 0 {
+					fmt.Printf("address [%s] lock time has expired [%s]\n", addr, expire)
 					continue
 				}
 				manualLock.AdditionalLockedAddr[addr] = struct{}{}
