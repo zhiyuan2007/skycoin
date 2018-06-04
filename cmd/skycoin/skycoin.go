@@ -119,6 +119,9 @@ type Config struct {
 	// Launch System Default Browser after client startup
 	LaunchBrowser bool
 
+	// Loading lock address or not
+	LoadingLockAddrs bool
+
 	// If true, print the configured client web interface address and exit
 	PrintWebInterfaceAddress bool
 
@@ -203,6 +206,9 @@ func (c *Config) register() {
 	flag.StringVar(&c.RPCInterfaceAddr, "rpc-interface-addr", c.RPCInterfaceAddr,
 		"addr to serve rpc interface on")
 	flag.UintVar(&c.RPCThreadNum, "rpc-thread-num", 5, "rpc thread number")
+
+	flag.BoolVar(&c.LoadingLockAddrs, "load-lock-addr", c.LoadingLockAddrs,
+		"loading lock addresses from ~/manual_locked.address at client startup")
 
 	flag.BoolVar(&c.LaunchBrowser, "launch-browser", c.LaunchBrowser,
 		"launch system default webbrowser at client startup")
@@ -296,7 +302,8 @@ var devConfig = Config{
 	RPCInterfaceAddr: "127.0.0.1",
 	RPCThreadNum:     5,
 
-	LaunchBrowser: true,
+	LaunchBrowser:    true,
+	LoadingLockAddrs: true,
 	// Data directory holds app data -- defaults to ~/.skycoin
 	DataDirectory: ".skycoin_test",
 	// Web GUI static resources
@@ -692,6 +699,10 @@ func Run(c *Config) {
 				}
 			}()
 		}
+	}
+
+	if c.LoadingLockAddrs {
+		visor.LoadingLockAddress()
 	}
 
 	/*

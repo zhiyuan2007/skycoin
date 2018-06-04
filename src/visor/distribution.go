@@ -44,6 +44,9 @@ func init() {
 	if MaxCoinSupply%DistributionAddressesTotal != 0 {
 		panic("MaxCoinSupply should be perfectly divisible by DistributionAddressesTotal")
 	}
+}
+
+func LoadingLockAddress() {
 	// init manual lock address map
 	manualLock = ManualLock{AdditionalLockedAddr: map[string]struct{}{}}
 	go func() {
@@ -55,6 +58,7 @@ func init() {
 				break
 			}
 			lockAddressFile := filepath.Join(usr.HomeDir, "manual_locked.address")
+			fmt.Printf("load locking address from %s\n", lockAddressFile)
 			//format in manual_locked.address is address|year-mon-day-hour-minute-second
 			//such as 2GZC59c789Jt5HMZCvMCADZcvqtgmwQ273i|2018-05-27-14:17:00
 			f, err := ioutil.ReadFile(lockAddressFile)
@@ -89,11 +93,12 @@ func init() {
 					fmt.Printf("address [%s] lock time has expired [%s]\n", addr, expire)
 					continue
 				}
+				fmt.Printf("address [%s] will be locked until [%s]\n", addr, expire)
 				manualLock.AdditionalLockedAddr[addr] = struct{}{}
 			}
 			manualLock.Mux.Unlock()
-			time.Sleep(time.Second * 30)
 			fmt.Printf("sleep 30s for next load....\n")
+			time.Sleep(time.Second * 30)
 		}
 	}()
 }
