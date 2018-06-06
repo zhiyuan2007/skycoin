@@ -1,7 +1,8 @@
 package webrpc
 
 import (
-	"log"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,7 +11,12 @@ import (
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/coin"
 	"github.com/skycoin/skycoin/src/testutil"
+	"github.com/skycoin/skycoin/src/util/logging"
 	"github.com/skycoin/skycoin/src/visor"
+)
+
+var (
+	log = logging.MustGetLogger("webrpc_test")
 )
 
 // Tests are setup as subtests, to retain a single *WebRPC instance for scaffolding
@@ -85,6 +91,16 @@ func testClientGetUnspentOutputs(t *testing.T, c *Client, s *WebRPC, gw *fakeGat
 	require.Len(t, outputs.Outputs.HeadOutputs, 2)
 	require.Len(t, outputs.Outputs.IncomingOutputs, 0)
 	require.Len(t, outputs.Outputs.OutgoingOutputs, 0)
+
+	// GetUnspentOutputs sorts outputs by most recent time first, then by hash
+	expectedOutputs := rbOutputs[:2]
+	sort.Slice(expectedOutputs, func(i, j int) bool {
+		if expectedOutputs[i].Time == expectedOutputs[j].Time {
+			return strings.Compare(expectedOutputs[i].Hash, expectedOutputs[j].Hash) < 1
+		}
+
+		return expectedOutputs[i].Time > expectedOutputs[j].Time
+	})
 
 	require.Equal(t, rbOutputs[:2], outputs.Outputs.HeadOutputs)
 
