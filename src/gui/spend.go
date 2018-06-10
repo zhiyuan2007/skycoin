@@ -244,6 +244,7 @@ type createTransactionRequest struct {
 	Wallet         createTransactionRequestWallet `json:"wallet"`
 	ChangeAddress  *wh.Address                    `json:"change_address"`
 	To             []receiver                     `json:"to"`
+	Message        string                         `json:"message"`
 }
 
 // createTransactionRequestWallet defines a wallet to spend from and optionally which addresses in the wallet
@@ -420,6 +421,7 @@ func (r createTransactionRequest) ToWalletParams() wallet.CreateTransactionParam
 		Wallet:        walletParams,
 		ChangeAddress: changeAddress,
 		To:            to,
+		Message:       r.Message,
 	}
 }
 

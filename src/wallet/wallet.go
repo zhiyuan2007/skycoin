@@ -162,6 +162,7 @@ type CreateTransactionParams struct {
 	Wallet         CreateTransactionWalletParams
 	ChangeAddress  cipher.Address
 	To             []coin.TransactionOutput
+	Message        string
 }
 
 // Validate validates CreateTransactionParams
@@ -1257,6 +1258,9 @@ func (w *Wallet) CreateAndSignTransactionAdvanced(params CreateTransactionParams
 		txn.PushOutput(params.ChangeAddress, changeCoins, changeHours)
 	}
 
+	if params.Message != "" {
+		txn.SetMessage(params.Message)
+	}
 	txn.SignInputs(toSign)
 	txn.UpdateHeader()
 

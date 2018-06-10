@@ -46,6 +46,8 @@ type Transaction struct {
 	Sigs []cipher.Sig        //list of signatures, 64+1 bytes each
 	In   []cipher.SHA256     //ouputs being spent
 	Out  []TransactionOutput //ouputs being created
+
+	Message string // message
 }
 
 // TransactionOutput hash output/name is function of Hash
@@ -181,6 +183,11 @@ func (txn *Transaction) PushInput(uxOut cipher.SHA256) uint16 {
 	}
 	txn.In = append(txn.In, uxOut)
 	return uint16(len(txn.In) - 1)
+}
+
+// SetMessage set message
+func (txn *Transaction) SetMessage(msg string) {
+	txn.Message = msg
 }
 
 // UxID compute transaction output id
