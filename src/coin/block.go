@@ -76,6 +76,7 @@ func NewBlock(prev Block, currentTime uint64, uxHash cipher.SHA256, txns Transac
 func NewGenesisBlock(genesisAddr cipher.Address, genesisCoins, timestamp uint64) (*Block, error) {
 	txn := Transaction{}
 	txn.PushOutput(genesisAddr, genesisCoins, genesisCoins)
+	txn.SetMessage("To be a billionaire you have to eat through the blockchain\n想成为亿万富翁必须吃透区块链")
 	body := BlockBody{Transactions: Transactions{txn}}
 	prevHash := cipher.SHA256{}
 	head := BlockHeader{

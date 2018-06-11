@@ -373,6 +373,7 @@ type ReadableTransaction struct {
 	Hash      string `json:"txid"`
 	InnerHash string `json:"inner_hash"`
 	Timestamp uint64 `json:"timestamp,omitempty"`
+	Message   string `json:"message"`
 
 	Sigs []string                    `json:"sigs"`
 	In   []string                    `json:"inputs"`
@@ -445,6 +446,7 @@ func NewGenesisReadableTransaction(t *Transaction) (*ReadableTransaction, error)
 		Hash:      t.Txn.TxIDHex(),
 		InnerHash: t.Txn.InnerHash.Hex(),
 		Timestamp: t.Time,
+		Message:   t.Txn.Message,
 
 		Sigs: sigs,
 		In:   in,
@@ -481,6 +483,7 @@ func NewReadableTransaction(t *Transaction) (*ReadableTransaction, error) {
 		Hash:      t.Txn.TxIDHex(),
 		InnerHash: t.Txn.InnerHash.Hex(),
 		Timestamp: t.Time,
+		Message:   t.Txn.Message,
 
 		Sigs: sigs,
 		In:   in,
@@ -543,9 +546,10 @@ func NewReadableBlockBody(b *coin.Block) (*ReadableBlockBody, error) {
 
 // ReadableBlock represents readable block
 type ReadableBlock struct {
-	Head ReadableBlockHeader `json:"header"`
-	Body ReadableBlockBody   `json:"body"`
-	Size int                 `json:"size"`
+	Head    ReadableBlockHeader `json:"header"`
+	Body    ReadableBlockBody   `json:"body"`
+	Size    int                 `json:"size"`
+	Message string              `json:"message"`
 }
 
 // NewReadableBlock creates readable block

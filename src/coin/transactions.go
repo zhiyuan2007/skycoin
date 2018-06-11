@@ -16,6 +16,11 @@ var (
 	DebugLevel1 = true
 	// DebugLevel2 enable checks for impossible conditions
 	DebugLevel2 = true
+
+	// MaxTransactionMsgSize max msg size for transacton
+	MaxTransactionMsgSize = 512
+
+	ErrMesssageSize = errors.New("message size exceed 512 bytes")
 )
 
 /*
@@ -186,8 +191,12 @@ func (txn *Transaction) PushInput(uxOut cipher.SHA256) uint16 {
 }
 
 // SetMessage set message
-func (txn *Transaction) SetMessage(msg string) {
+func (txn *Transaction) SetMessage(msg string) error {
+	if len(msg) > MaxTransactionMsgSize {
+		return ErrMesssageSize
+	}
 	txn.Message = msg
+	return nil
 }
 
 // UxID compute transaction output id

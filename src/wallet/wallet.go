@@ -1258,8 +1258,8 @@ func (w *Wallet) CreateAndSignTransactionAdvanced(params CreateTransactionParams
 		txn.PushOutput(params.ChangeAddress, changeCoins, changeHours)
 	}
 
-	if params.Message != "" {
-		txn.SetMessage(params.Message)
+	if err := txn.SetMessage(params.Message); err != nil {
+		return nil, nil, err
 	}
 	txn.SignInputs(toSign)
 	txn.UpdateHeader()

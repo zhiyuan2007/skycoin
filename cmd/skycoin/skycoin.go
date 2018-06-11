@@ -45,7 +45,7 @@ var (
 	logger = logging.MustGetLogger("main")
 
 	// GenesisSignatureStr hex string of genesis signature
-	GenesisSignatureStr = "676b30119d17e630bfdafa9887729acf7573c50775e7c73a16503ff3faba16c92e0952cab52be4ed4a2852eee1a1cf371e37479e098b0e7e15479c0789ad835300"
+	GenesisSignatureStr = "8993e1a1aef6f5fdf936de2df653bc2fd27f0fe9f56127e981311cb8b2c5946f465dc6fabc56e658d0b06147c07dd3b68bf65d863d4f172ac256c70750cc3fee01"
 	// GenesisAddressStr genesis address string
 	GenesisAddressStr = "jFAUc1AUeAgVjc4Br5mv3baaQkuiKZ7maw"
 	// BlockchainPubkeyStr pubic key string
@@ -54,14 +54,14 @@ var (
 	BlockchainSeckeyStr = ""
 
 	// GenesisTimestamp genesis block create unix time
-	GenesisTimestamp uint64 = 1426562704
+	GenesisTimestamp uint64 = 1528709281
 	// GenesisCoinVolume represents the coin capacity
 	GenesisCoinVolume uint64 = 100e12
 
 	// DefaultConnections the default trust node addresses
 	DefaultConnections = []string{
-		"116.62.60.254:16000",
-		"47.52.222.166:16000",
+		"116.62.60.254:26000",
+		"47.52.222.166:26000",
 	}
 )
 
@@ -122,7 +122,7 @@ type Config struct {
 	// If true, print the configured client web interface address and exit
 	PrintWebInterfaceAddress bool
 
-	// Data directory holds app data -- defaults to ~/.skycoin
+	// Data directory holds app data -- defaults to ~/.skycoin_msgtest
 	DataDirectory string
 	// GUI directory contains assets for the html gui
 	GUIDirectory string
@@ -199,9 +199,10 @@ func (c *Config) register() {
 	flag.UintVar(&c.RPCThreadNum, "rpc-thread-num", c.RPCThreadNum, "rpc thread number")
 
 	flag.BoolVar(&c.LaunchBrowser, "launch-browser", c.LaunchBrowser, "launch system default webbrowser at client startup")
+	flag.BoolVar(&c.LoadingLockAddrs, "lock-addr", c.LoadingLockAddrs, "start lock address function or not")
 	flag.BoolVar(&c.PrintWebInterfaceAddress, "print-web-interface-address", c.PrintWebInterfaceAddress, "print configured web interface address and exit")
-	flag.StringVar(&c.DataDirectory, "data-dir", c.DataDirectory, "directory to store app data (defaults to ~/.skycoin)")
-	flag.StringVar(&c.DBPath, "db-path", c.DBPath, "path of database file (defaults to ~/.skycoin/data.db)")
+	flag.StringVar(&c.DataDirectory, "data-dir", c.DataDirectory, "directory to store app data (defaults to ~/.skycoin_msgtest)")
+	flag.StringVar(&c.DBPath, "db-path", c.DBPath, "path of database file (defaults to ~/.skycoin_msgtest/data.db)")
 	flag.BoolVar(&c.DBReadOnly, "db-read-only", c.DBReadOnly, "open bolt db read-only")
 	flag.StringVar(&c.ConnectTo, "connect-to", c.ConnectTo, "connect to this ip only")
 	flag.BoolVar(&c.ProfileCPU, "profile-cpu", c.ProfileCPU, "enable cpu profiling")
@@ -223,7 +224,7 @@ func (c *Config) register() {
 	flag.StringVar(&GenesisSignatureStr, "genesis-signature", GenesisSignatureStr, "genesis block signature")
 	flag.Uint64Var(&c.GenesisTimestamp, "genesis-timestamp", c.GenesisTimestamp, "genesis block timestamp")
 
-	flag.StringVar(&c.WalletDirectory, "wallet-dir", c.WalletDirectory, "location of the wallet files. Defaults to ~/.skycoin/wallet/")
+	flag.StringVar(&c.WalletDirectory, "wallet-dir", c.WalletDirectory, "location of the wallet files. Defaults to ~/.skycoin_msgtest/wallet/")
 	flag.IntVar(&c.MaxOutgoingConnections, "max-outgoing-connections", c.MaxOutgoingConnections, "The maximum outgoing connections allowed")
 	flag.IntVar(&c.PeerlistSize, "peerlist-size", c.PeerlistSize, "The peer list size")
 	flag.DurationVar(&c.OutgoingConnectionsRate, "connection-rate", c.OutgoingConnectionsRate, "How often to make an outgoing connection")
@@ -255,7 +256,7 @@ var devConfig = Config{
 	// public interface
 	Address: "",
 	//gnet uses this for TCP incoming and outgoing
-	Port: 16000,
+	Port: 26000,
 	// MaxOutgoingConnections is the maximum outgoing connections allowed.
 	MaxOutgoingConnections: 16,
 	DownloadPeerList:       false,
@@ -267,7 +268,7 @@ var devConfig = Config{
 	//AddressVersion: "test",
 	// Remote web interface
 	WebInterface:             true,
-	WebInterfacePort:         16420,
+	WebInterfacePort:         26420,
 	WebInterfaceAddr:         "127.0.0.1",
 	WebInterfaceCert:         "",
 	WebInterfaceKey:          "",
@@ -275,14 +276,14 @@ var devConfig = Config{
 	PrintWebInterfaceAddress: false,
 
 	RPCInterface:     true,
-	RPCInterfacePort: 16430,
+	RPCInterfacePort: 26430,
 	RPCInterfaceAddr: "127.0.0.1",
 	RPCThreadNum:     5,
 
 	LaunchBrowser:    false,
 	LoadingLockAddrs: true,
-	// Data directory holds app data -- defaults to ~/.skycoin
-	DataDirectory: filepath.Join(home, ".skycoin_test"),
+	// Data directory holds app data -- defaults to ~/.skycoin_msgtest
+	DataDirectory: filepath.Join(home, ".skycoin_msgtest"),
 	// Web GUI static resources
 	GUIDirectory: "./src/gui/static/",
 	// Logging
@@ -315,7 +316,7 @@ var devConfig = Config{
 	// Enable cpu profiling
 	ProfileCPU: false,
 	// Where the file is written to
-	ProfileCPUFile: "skycoin.prof",
+	ProfileCPUFile: "skycoin_msgtest.prof",
 	// HTTP profiling interface (see http://golang.org/pkg/net/http/pprof/)
 	HTTPProf: false,
 	// Will force it to connect to this ip:port, instead of waiting for it

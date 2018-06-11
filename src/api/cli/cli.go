@@ -26,8 +26,8 @@ const (
 	walletExt         = ".wlt"
 	defaultCoin       = "skycoin"
 	defaultWalletName = "$COIN_cli" + walletExt
-	defaultWalletDir  = "$HOME/.$COIN_test/wallets"
-	defaultRPCAddress = "127.0.0.1:16430"
+	defaultWalletDir  = "$HOME/.$COIN_msgtest/wallets"
+	defaultRPCAddress = "127.0.0.1:26430"
 )
 
 var (
@@ -121,7 +121,7 @@ func LoadConfig() (Config, error) {
 	home := file.UserHome()
 
 	// get wallet dir from env
-	wltDir := fmt.Sprintf("%s/.%s_test/wallets", home, coin)
+	wltDir := fmt.Sprintf("%s/.%s_msgtest/wallets", home, coin)
 
 	// get wallet name from env
 	wltName := os.Getenv("WALLET_NAME")
@@ -133,7 +133,7 @@ func LoadConfig() (Config, error) {
 		return Config{}, ErrWalletName
 	}
 
-	dataDir := filepath.Join(home, fmt.Sprintf(".%s_test", coin))
+	dataDir := filepath.Join(home, fmt.Sprintf(".%s_msgtest", coin))
 
 	return Config{
 		WalletDir:  wltDir,
