@@ -834,6 +834,7 @@ func InitTransaction() coin.Transaction {
 	for i := range addrs {
 		addr := cipher.MustDecodeBase58Address(addrs[i])
 		tx.PushOutput(addr, visor.DistributionAddressInitialBalance*1e6, 1)
+		tx.SetMessage(fmt.Sprintf("this is %d(th) boss wallet", i))
 	}
 	/*
 		seckeys := make([]cipher.SecKey, 1)

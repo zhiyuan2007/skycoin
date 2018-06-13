@@ -942,7 +942,7 @@ type Validator interface {
 // CreateAndSignTransaction Creates a Transaction
 // spending coins and hours from wallet
 func (w *Wallet) CreateAndSignTransaction(vld Validator, unspent blockdb.UnspentGetter,
-	headTime, coins uint64, dest cipher.Address) (*coin.Transaction, error) {
+	headTime, coins uint64, dest cipher.Address, msg string) (*coin.Transaction, error) {
 	if w.IsEncrypted() {
 		return nil, ErrWalletEncrypted
 	}
@@ -1015,6 +1015,10 @@ func (w *Wallet) CreateAndSignTransaction(vld Validator, unspent blockdb.Unspent
 	}
 
 	txn.PushOutput(dest, coins, addrHours[0])
+
+	if err := txn.SetMessage(msg); err != nil {
+		return nil, err
+	}
 
 	txn.SignInputs(toSign)
 	txn.UpdateHeader()

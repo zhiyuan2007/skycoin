@@ -9,6 +9,7 @@ import (
 
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/cipher/go-bip39"
+	"github.com/skycoin/skycoin/src/coin"
 
 	"github.com/skycoin/skycoin/src/visor"
 	"github.com/skycoin/skycoin/src/wallet"
@@ -183,7 +184,13 @@ func walletSpendHandler(gateway Gatewayer) http.HandlerFunc {
 			return
 		}
 
-		tx, err := gateway.Spend(wltID, []byte(r.FormValue("password")), coins, dst)
+		msg := r.FormValue("message")
+		if len(msg) > coin.MaxTransactionMsgSize {
+			wh.Error400(w, fmt.Sprintf("invalid message length: must <= %d", coin.MaxTransactionMsgSize))
+			return
+		}
+
+		tx, err := gateway.Spend(wltID, []byte(r.FormValue("password")), coins, dst, msg)
 		switch err {
 		case nil:
 		case fee.ErrTxnNoFee,
