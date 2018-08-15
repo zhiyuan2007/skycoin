@@ -1,6 +1,7 @@
 package dpos
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/skycoin/skycoin/src/cipher"
@@ -97,4 +98,9 @@ func TestCheckDeadline(t *testing.T) {
 func TestCheckValidator(t *testing.T) {
 	ts := uint64(12345678)
 	block := oneBlock(ts)
+	now := int64(12345680)
+	dpos := NewDpos()
+	err := dpos.CheckValidator(block, now)
+	fmt.Printf("err %v\n", err)
+	assert.Error(t, err)
 }

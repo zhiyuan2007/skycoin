@@ -1,6 +1,8 @@
 package dpos
 
 import (
+	"errors"
+
 	"github.com/skycoin/skycoin/src/cipher"
 )
 
@@ -15,6 +17,9 @@ func NewDposContext() *DposContext {
 }
 
 func (dc *DposContext) GetValidators() ([]cipher.Address, error) {
+	if len(dc.candidate) == 0 {
+		return dc.candidate, errors.New("zero validator")
+	}
 	return dc.candidate, nil
 }
 
