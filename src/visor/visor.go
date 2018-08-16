@@ -11,6 +11,7 @@ import (
 
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/coin"
+	"github.com/skycoin/skycoin/src/consensus/dpos"
 	"github.com/skycoin/skycoin/src/util/droplet"
 	"github.com/skycoin/skycoin/src/util/utc"
 	"github.com/skycoin/skycoin/src/visor/blockdb"
@@ -144,7 +145,7 @@ func NewVisorConfig() Config {
 		BlockchainPubkey: cipher.PubKey{},
 		BlockchainSeckey: cipher.SecKey{},
 
-		BlockCreationInterval: 10,
+		BlockCreationInterval: 1,
 		//BlockCreationForceInterval: 120, //create block if no block within this many seconds
 
 		UnconfirmedCheckInterval:     time.Hour * 2,
@@ -245,6 +246,7 @@ type Visor struct {
 	history  historyer
 	bcParser *BlockchainParser
 	db       *bolt.DB
+	dpos     *dpos.Dpos
 }
 
 // NewVisor creates a Visor for managing the blockchain database
@@ -294,6 +296,7 @@ func NewVisor(c Config, db *bolt.DB) (*Visor, error) {
 		bcParser:    bp,
 		Wallets:     wltServ,
 		StartedAt:   time.Now(),
+		dpos:        dpos.NewDpos(),
 	}
 
 	return v, nil
@@ -373,6 +376,18 @@ func (vs *Visor) RefreshUnconfirmed() ([]cipher.SHA256, error) {
 // Returns the transaction hashes that were removed.
 func (vs *Visor) RemoveInvalidUnconfirmed() ([]cipher.SHA256, error) {
 	return vs.Unconfirmed.RemoveInvalid(vs.Blockchain)
+}
+
+func (vs *Visor) TurnTheNode(when uint64) (bool, error) {
+	lastBlock, err := vs.GetHeadBlock()
+	if err != nil {
+		return false, err
+	}
+	err = vs.dpos.CheckValidator(lastBlock, when)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // CreateBlock creates a SignedBlock from pending transactions
