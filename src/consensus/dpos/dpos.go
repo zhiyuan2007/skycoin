@@ -1,7 +1,9 @@
 package dpos
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"math/big"
 	"sync"
 
@@ -55,6 +57,7 @@ var (
 	ErrInvalidTimestamp           = errors.New("invalid timestamp")
 	ErrWaitForPrevBlock           = errors.New("wait for last block arrived")
 	ErrMintFutureBlock            = errors.New("mint the future block")
+	ErrBlockAlreadyCreated        = errors.New("block already created in the slot")
 	ErrMismatchSignerAndValidator = errors.New("mismatch block signer and validator")
 	ErrInvalidBlockValidator      = errors.New("invalid block validator")
 	ErrInvalidMintBlockTime       = errors.New("invalid time to mint the block")
@@ -62,19 +65,31 @@ var (
 )
 
 type Dpos struct {
-	mu   sync.RWMutex
-	stop chan bool
+	signer cipher.Address
+	mu     sync.RWMutex
+	stop   chan bool
 }
 
 func NewDpos() *Dpos {
 	return &Dpos{}
 }
 
+func (d *Dpos) SetSigner(signer cipher.Address) {
+	d.signer = signer
+}
+
 func (d *Dpos) checkDeadline(lastBlock *coin.SignedBlock, now int64) error {
 	prevSlot := PrevSlot(now)
 	nextSlot := NextSlot(now)
+	fmt.Printf("prev %d, next %d, now %d, last %d\n", prevSlot, nextSlot, now, lastBlock.Time())
 	if int64(lastBlock.Time()) >= nextSlot {
 		return ErrMintFutureBlock
+	}
+	if int64(lastBlock.Time()) >= prevSlot && int64(lastBlock.Time()) < nextSlot {
+		return ErrBlockAlreadyCreated
+	}
+	if int64(lastBlock.Time()) < prevSlot {
+		return nil
 	}
 	// last block was arrived, or time's up
 	if int64(lastBlock.Time()) == prevSlot || nextSlot-now <= 1 {
@@ -89,11 +104,12 @@ func (d *Dpos) CheckValidator(lastBlock *coin.SignedBlock, now int64) error {
 	}
 	dposContext := NewDposContext()
 	epochContext := NewEpochFromXX(*dposContext, now)
-	validator, err := epochContext.lookupValidator(now)
+	validator, err := epochContext.LookupValidator(PrevSlot(now))
 	if err != nil {
 		return err
 	}
-	if (validator == cipher.Address{}) {
+	fmt.Printf("validator %s\n", validator.String())
+	if (validator == cipher.Address{} || bytes.Compare(validator.Bytes(), d.signer.Bytes()) != 0) {
 		return ErrInvalidBlockValidator
 	}
 	return nil

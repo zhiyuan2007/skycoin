@@ -18,7 +18,7 @@ func NewEpochFromXX(dc DposContext, ts int64) *EpochContext {
 	}
 }
 
-func (ec *EpochContext) lookupValidator(now int64) (validator cipher.Address, err error) {
+func (ec *EpochContext) LookupValidator(now int64) (validator cipher.Address, err error) {
 	validator = cipher.Address{}
 	offset := now % epochInterval
 	if offset%blockInterval != 0 {

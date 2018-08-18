@@ -1,7 +1,6 @@
 package dpos
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/skycoin/skycoin/src/cipher"
@@ -70,11 +69,11 @@ func TestCheckDeadline(t *testing.T) {
 	}{
 		{
 			now: 12345677,
-			err: ErrWaitForPrevBlock,
+			err: ErrBlockAlreadyCreated,
 		},
 		{
 			now: 12345681,
-			err: ErrWaitForPrevBlock,
+			err: nil,
 		},
 		{
 			now: 12345670,
@@ -82,11 +81,7 @@ func TestCheckDeadline(t *testing.T) {
 		},
 		{
 			now: 12345678,
-			err: ErrWaitForPrevBlock,
-		},
-		{
-			now: 12345679,
-			err: nil,
+			err: ErrBlockAlreadyCreated,
 		},
 	}
 	for _, cs := range testCases {
@@ -100,7 +95,16 @@ func TestCheckValidator(t *testing.T) {
 	block := oneBlock(ts)
 	now := int64(12345680)
 	dpos := NewDpos()
+	addr := cipher.MustDecodeBase58Address("jFAUc1AUeAgVjc4Br5mv3baaQkuiKZ7maw")
+	dpos.SetSigner(addr)
 	err := dpos.CheckValidator(block, now)
-	fmt.Printf("err %v\n", err)
-	assert.Error(t, err)
+	assert.Equal(t, ErrBlockAlreadyCreated, err)
+
+	now = int64(12345681)
+	err = dpos.CheckValidator(block, now)
+	assert.NoError(t, err)
+
+	now = int64(12345691)
+	err = dpos.CheckValidator(block, now)
+	assert.Equal(t, ErrInvalidBlockValidator, err)
 }
