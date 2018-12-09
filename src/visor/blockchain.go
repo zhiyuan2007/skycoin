@@ -3,10 +3,12 @@ package visor
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/skycoin/skycoin/src/cipher"
 	"github.com/skycoin/skycoin/src/coin"
+	"github.com/skycoin/skycoin/src/params"
 	"github.com/skycoin/skycoin/src/util/fee"
 	"github.com/skycoin/skycoin/src/visor/blockdb"
 	"github.com/skycoin/skycoin/src/visor/dbutil"
@@ -24,6 +26,22 @@ var (
 	// ErrVerifyStopped is returned when database verification is interrupted
 	ErrVerifyStopped = errors.New("database verification stopped")
 )
+
+// ErrBlockNotExist may be returned if a block is not found
+type ErrBlockNotExist struct {
+	Seq uint64
+}
+
+// NewErrBlockNotExist creates an ErrBlockNotExist based on an unknown block sequence
+func NewErrBlockNotExist(seq uint64) ErrBlockNotExist {
+	return ErrBlockNotExist{
+		Seq: seq,
+	}
+}
+
+func (e ErrBlockNotExist) Error() string {
+	return fmt.Sprintf("block does not exist seq=%d", e.Seq)
+}
 
 //Warning: 10e6 is 10 million, 1e6 is 1 million
 
@@ -86,7 +104,7 @@ func CreateBuckets(db *dbutil.DB) error {
 
 // BlockchainConfig configures Blockchain options
 type BlockchainConfig struct {
-	// Arbitrating mode: if in arbitrating mode, when master node execute blocks,
+	// Arbitrating mode: if in arbitrating mode, when block publishing node execute blocks,
 	// the invalid transaction will be skipped and continue the next; otherwise,
 	// node will throw the error and return.
 	Arbitrating bool
@@ -200,7 +218,7 @@ func (bc Blockchain) NewBlock(tx *dbutil.Tx, txns coin.Transactions, currentTime
 	}
 
 	// make sure block is valid
-	if DebugLevel2 == true {
+	if DebugLevel2 {
 		if err := bc.verifyBlockHeader(tx, *b); err != nil {
 			return nil, err
 		}
@@ -329,7 +347,7 @@ func (bc Blockchain) VerifyBlockTxnConstraints(tx *dbutil.Tx, txn coin.Transacti
 }
 
 func (bc Blockchain) verifyBlockTxnHardConstraints(tx *dbutil.Tx, txn coin.Transaction, head *coin.SignedBlock, uxIn coin.UxArray) error {
-	if err := VerifyBlockTxnConstraints(txn, head, uxIn); err != nil {
+	if err := VerifyBlockTxnConstraints(txn, head.Head, uxIn); err != nil {
 		return err
 	}
 
@@ -380,7 +398,7 @@ func (bc Blockchain) VerifySingleTxnHardConstraints(tx *dbutil.Tx, txn coin.Tran
 // VerifySingleTxnSoftHardConstraints checks that the transaction does not violate hard or soft constraints,
 // for transactions that are not included in a block.
 // Hard constraints are checked before soft constraints.
-func (bc Blockchain) VerifySingleTxnSoftHardConstraints(tx *dbutil.Tx, txn coin.Transaction, maxSize int) error {
+func (bc Blockchain) VerifySingleTxnSoftHardConstraints(tx *dbutil.Tx, txn coin.Transaction, verifyParams params.VerifyTxn) error {
 	// NOTE: Unspent().GetArray() returns an error if not all txn.In can be found
 	// This prevents double spends
 	uxIn, err := bc.Unspent().GetArray(tx, txn.In)
@@ -398,11 +416,11 @@ func (bc Blockchain) VerifySingleTxnSoftHardConstraints(tx *dbutil.Tx, txn coin.
 		return err
 	}
 
-	return VerifySingleTxnSoftConstraints(txn, head.Time(), uxIn, maxSize)
+	return VerifySingleTxnSoftConstraints(txn, head.Time(), uxIn, verifyParams)
 }
 
 func (bc Blockchain) verifySingleTxnHardConstraints(tx *dbutil.Tx, txn coin.Transaction, head *coin.SignedBlock, uxIn coin.UxArray) error {
-	if err := VerifySingleTxnHardConstraints(txn, head, uxIn); err != nil {
+	if err := VerifySingleTxnHardConstraints(txn, head.Head, uxIn); err != nil {
 		return err
 	}
 
@@ -427,8 +445,28 @@ func (bc Blockchain) verifySingleTxnHardConstraints(tx *dbutil.Tx, txn coin.Tran
 	return nil
 }
 
-// GetBlocks return blocks whose seq are in the range of start and end.
-func (bc Blockchain) GetBlocks(tx *dbutil.Tx, start, end uint64) ([]coin.SignedBlock, error) {
+// GetBlocks returns blocks matching seqs. If any block is not found, returns an error.
+func (bc Blockchain) GetBlocks(tx *dbutil.Tx, seqs []uint64) ([]coin.SignedBlock, error) {
+	blocks := make([]coin.SignedBlock, len(seqs))
+
+	for i, s := range seqs {
+		b, err := bc.store.GetSignedBlockBySeq(tx, s)
+		if err != nil {
+			return nil, err
+		}
+
+		if b == nil {
+			return nil, NewErrBlockNotExist(s)
+		}
+
+		blocks[i] = *b
+	}
+
+	return blocks, nil
+}
+
+// GetBlocksInRange return blocks whose seq are in the range of start and end.
+func (bc Blockchain) GetBlocksInRange(tx *dbutil.Tx, start, end uint64) ([]coin.SignedBlock, error) {
 	if start > end {
 		return nil, nil
 	}
@@ -437,7 +475,7 @@ func (bc Blockchain) GetBlocks(tx *dbutil.Tx, start, end uint64) ([]coin.SignedB
 	for i := start; i <= end; i++ {
 		b, err := bc.store.GetSignedBlockBySeq(tx, i)
 		if err != nil {
-			logger.WithError(err).Error("bc.store.GetBlockBySeq failed")
+			logger.WithError(err).Error("bc.store.GetSignedBlockBySeq failed")
 			return nil, err
 		}
 
@@ -470,7 +508,7 @@ func (bc Blockchain) GetLastBlocks(tx *dbutil.Tx, num uint64) ([]coin.SignedBloc
 		start = 0
 	}
 
-	return bc.GetBlocks(tx, uint64(start), end)
+	return bc.GetBlocksInRange(tx, uint64(start), end)
 }
 
 /* Private */
@@ -497,7 +535,11 @@ func (bc Blockchain) processTransactions(tx *dbutil.Tx, txs coin.Transactions) (
 
 	// Transactions need to be sorted by fee and hash before arbitrating
 	if bc.cfg.Arbitrating {
-		txns = coin.SortTransactions(txns, bc.TransactionFee(tx, head.Time()))
+		txns, err = coin.SortTransactions(txns, bc.TransactionFee(tx, head.Time()))
+		if err != nil {
+			logger.Critical().WithError(err).Error("processTransactions: coin.SortTransactions failed")
+			return nil, err
+		}
 	}
 
 	//TODO: audit
@@ -517,7 +559,9 @@ func (bc Blockchain) processTransactions(tx *dbutil.Tx, txs coin.Transactions) (
 		// signature indices and duplicate spends within itself
 		if err := bc.VerifyBlockTxnConstraints(tx, txn); err != nil {
 			switch err.(type) {
-			case ErrTxnViolatesHardConstraint, ErrTxnViolatesSoftConstraint:
+			case ErrTxnViolatesSoftConstraint:
+				logger.Critical().WithError(err).Panic("bc.VerifyBlockTxnConstraints should not return a ErrTxnViolatesSoftConstraint error")
+			case ErrTxnViolatesHardConstraint:
 				if bc.cfg.Arbitrating {
 					skip[i] = struct{}{}
 					continue
@@ -596,7 +640,7 @@ func (bc Blockchain) processTransactions(tx *dbutil.Tx, txs coin.Transactions) (
 					// amongst different txns. Duplicate transactions are
 					// caught earlier, when duplicate expected outputs are
 					// checked for, and will not trigger this.
-					return nil, errors.New("Duplicate transaction")
+					return nil, errors.New("Unexpected duplicate transaction")
 				}
 			}
 			for a := range s.In {
@@ -643,17 +687,12 @@ func (bc Blockchain) TransactionFee(tx *dbutil.Tx, headTime uint64) coin.FeeCalc
 	}
 }
 
-type sigHash struct {
-	sig  cipher.Sig
-	hash cipher.SHA256
-}
-
 // VerifySignature checks that BlockSigs state correspond with coin.Blockchain state
 // and that all signatures are valid.
 func (bc *Blockchain) VerifySignature(block *coin.SignedBlock) error {
-	err := cipher.VerifySignature(bc.cfg.Pubkey, block.Sig, block.HashHeader())
+	err := block.VerifySignature(bc.cfg.Pubkey)
 	if err != nil {
-		logger.Errorf("Signature verification failed: %v", err)
+		logger.Errorf("Blockchain signature verification failed for block %d: %v", block.Head.BkSeq, err)
 	}
 	return err
 }
@@ -676,25 +715,21 @@ func (bc *Blockchain) WalkChain(workers int, f func(*dbutil.Tx, *coin.SignedBloc
 	for i := 0; i < workers; i++ {
 		go func() {
 			defer workerWg.Done()
-			bc.db.View("WalkChain verify blocks", func(tx *dbutil.Tx) error {
-				for {
-					select {
-					case b, ok := <-signedBlockC:
-						if !ok {
-							return nil
-						}
-
-						if err := f(tx, b); err != nil {
-							// if err := cipher.VerifySignature(bc.cfg.Pubkey, sh.sig, sh.hash); err != nil {
-							// logger.Errorf("Signature verification failed: %v", err)
-							select {
-							case errC <- err:
-							default:
-							}
+			if err := bc.db.View("WalkChain verify blocks", func(tx *dbutil.Tx) error {
+				for b := range signedBlockC {
+					if err := f(tx, b); err != nil {
+						// if err := cipher.VerifyPubKeySignedHash(bc.cfg.Pubkey, sh.sig, sh.hash); err != nil {
+						// logger.Errorf("Signature verification failed: %v", err)
+						select {
+						case errC <- err:
+						default:
 						}
 					}
 				}
-			})
+				return nil
+			}); err != nil {
+				logger.WithError(err).Error("WalkChain verify blocks db transaction failed")
+			}
 		}()
 	}
 
@@ -712,7 +747,7 @@ func (bc *Blockchain) WalkChain(workers int, f func(*dbutil.Tx, *coin.SignedBloc
 	// * Verify the signature for the block
 	wg.Add(1)
 	go func() {
-		bc.db.View("WalkChain get blocks", func(tx *dbutil.Tx) error {
+		if err := bc.db.View("WalkChain get blocks", func(tx *dbutil.Tx) error {
 			if length, err := bc.Len(tx); err != nil {
 				return err
 			} else if length == 0 {
@@ -757,7 +792,9 @@ func (bc *Blockchain) WalkChain(workers int, f func(*dbutil.Tx, *coin.SignedBloc
 				}
 			}
 			return nil
-		})
+		}); err != nil {
+			logger.WithError(err).Error("WalkChain get blocks db transaction failed")
+		}
 	}()
 
 	var err error

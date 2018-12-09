@@ -39,7 +39,6 @@ func TestWebRPC(t *testing.T) {
 				},
 			},
 		},
-
 		{
 			name:   "invalid jsonrpc",
 			status: http.StatusOK,
@@ -63,16 +62,13 @@ func TestWebRPC(t *testing.T) {
 			req, err := http.NewRequest(tc.args.httpMethod, "/api/v1/webrpc", bytes.NewBuffer(d))
 			require.NoError(t, err)
 
-			csrfStore := &CSRFStore{
-				Enabled: false,
-			}
-
-			gateway := NewGatewayerMock()
+			gateway := &MockGatewayer{}
 			handler := newServerMux(muxConfig{
 				host:            configuredHost,
 				appLoc:          ".",
 				enableJSON20RPC: true,
-			}, gateway, csrfStore, nil)
+				disableCSRF:     true,
+			}, gateway, nil)
 
 			rr := httptest.NewRecorder()
 			handler.ServeHTTP(rr, req)
