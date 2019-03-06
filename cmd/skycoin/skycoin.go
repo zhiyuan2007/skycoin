@@ -20,7 +20,7 @@ import (
 
 var (
 	// Version of the node. Can be set by -ldflags
-	Version = "0.25.0-rc1"
+	Version = "0.25.1"
 	// Commit ID. Can be set by -ldflags
 	Commit = ""
 	// Branch name. Can be set by -ldflags
@@ -53,11 +53,14 @@ var (
 	DefaultConnections = []string{
 		"118.178.135.93:6000",
 		"47.88.33.156:6000",
-		"121.41.103.148:6000",
 		"104.237.142.206:6000",
 		"176.58.126.224:6000",
 		"172.104.85.6:6000",
 		"139.162.7.132:6000",
+		"139.162.39.186:6000",
+		"45.33.111.142:6000",
+		"109.237.27.172:6000",
+		"172.104.41.14:6000",
 	}
 
 	nodeConfig = skycoin.NewNodeConfig(ConfigMode, skycoin.NodeParameters{
@@ -79,7 +82,7 @@ var (
 		CreateBlockBurnFactor:          2,
 		CreateBlockMaxTransactionSize:  32768,
 		CreateBlockMaxDropletPrecision: 3,
-		MaxBlockSize:                   32768,
+		MaxBlockTransactionsSize:       32768,
 	})
 
 	parseFlags = true

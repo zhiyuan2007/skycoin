@@ -56,7 +56,6 @@ scratch, to remedy the rough edges in the Bitcoin design.
 	- [Development image](#development-image)
 - [API Documentation](#api-documentation)
 	- [REST API](#rest-api)
-	- [JSON-RPC 2.0 API](#json-rpc-20-api)
 	- [Skycoin command line interface](#skycoin-command-line-interface)
 - [Integrating Skycoin with your application](#integrating-skycoin-with-your-application)
 - [Contributing a node to the network](#contributing-a-node-to-the-network)
@@ -80,6 +79,9 @@ scratch, to remedy the rough edges in the Bitcoin design.
 	- [Formatting](#formatting)
 	- [Code Linting](#code-linting)
 	- [Profiling](#profiling)
+	- [Fuzzing](#fuzzing)
+		- [base58](#base58)
+		- [encoder](#encoder)
 	- [Dependencies](#dependencies)
 		- [Rules](#rules)
 		- [Management](#management)
@@ -113,7 +115,7 @@ Skycoin supports go1.10+.
 ### Go get skycoin
 
 ```sh
-go get github.com/skycoin/skycoin/...
+go get github.com/skycoin/skycoin/cmd/...
 ```
 
 This will download `github.com/skycoin/skycoin` to `$GOPATH/src/github.com/skycoin/skycoin`.
@@ -189,17 +191,16 @@ and the vim editor among other tools.
 The [skycoin/skycoindev-dind docker image](docker/images/dev-docker/README.md) comes with docker installed
 and all tools available on `skycoin/skycoindev-cli:develop` docker image.
 
+Also, the [skycoin/skycoindev-vscode docker image](docker/images/dev-vscode/README.md) is provided
+to facilitate the setup of the development process with [Visual Studio Code](https://code.visualstudio.com)
+and useful tools included in `skycoin/skycoindev-cli`.
+
+
 ## API Documentation
 
 ### REST API
 
 [REST API](src/api/README.md).
-
-### JSON-RPC 2.0 API
-
-*Deprecated, avoid using this*
-
-[JSON-RPC 2.0 README](src/api/webrpc/README.md).
 
 ### Skycoin command line interface
 
@@ -272,6 +273,12 @@ Example Skycoin URIs:
 * `skycoin:2hYbwYudg34AjkJJCRVRcMeqSWHUixjkfwY?amount=123.456&hours=70`
 * `skycoin:2hYbwYudg34AjkJJCRVRcMeqSWHUixjkfwY?amount=123.456&hours=70&label=friend&message=Birthday%20Gift`
 
+Additonally, if no `skycoin:` prefix is present when parsing, the string may be treated as an address:
+
+* `2hYbwYudg34AjkJJCRVRcMeqSWHUixjkfwY`
+
+However, do not use this URI in QR codes displayed to the user, because the address can't be disambiguated from other Skyfiber coins.
+
 ## Wire protocol user agent
 
 [Wire protocol user agent description](https://github.com/skycoin/skycoin/wiki/Wire-protocol-user-agent)
@@ -287,13 +294,22 @@ We have two branches: `master` and `develop`.
 ### Modules
 
 * `api` - REST API interface
-* `api/webrpc` - JSON-RPC 2.0 API [deprecated]
-* `cipher` - cryptographic library
+* `cipher` - cryptographic library (key generation, addresses, hashes)
+* `cipher/base58` - Base58 encoding
+* `cipher/encoder` - reflect-based deterministic runtime binary encoder
+* `cipher/encrypt` - at-rest data encryption (chacha20poly1305+scrypt)
+* `cipher/go-bip39` - BIP-39 seed generation
 * `cli` - CLI library
-* `coin` - blockchain data structures
+* `coin` - blockchain data structures (blocks, transactions, unspent outputs)
 * `daemon` - top-level application manager, combining all components (networking, database, wallets)
 * `daemon/gnet` - networking library
 * `daemon/pex` - peer management
+* `params` - configurable transaction verification parameters
+* `readable` - JSON-encodable representations of internal structures
+* `skycoin` - core application initialization and configuration
+* `testutil` - testing utility methods
+* `transaction` - methods for creating transactions
+* `util` - miscellaneous utilities
 * `visor` - top-level blockchain database layer
 * `visor/blockdb` - low-level blockchain database layer
 * `visor/historydb` - low-level blockchain database layer for historical blockchain metadata
@@ -304,9 +320,8 @@ We have two branches: `master` and `develop`.
 Skycoin implements client libraries which export core functionality for usage from
 other programming languages.
 
-* `lib/cgo/` - libskycoin C client library ( [overview](lib/cgo/README.md), [API reference](docs/libc/API.md) )
-
-For further details run `make docs` to generate documetation and read the corresponding README and API references.
+* [libskycoin C client library and SWIG interface](https://github.com/skycoin/libskycoin)
+* [skycoin-lite: Javascript and mobile bindings](https://github.com/skycoin/skycoin-lite)
 
 ### Running Tests
 
@@ -353,10 +368,10 @@ need to start a skycoin node:
 After the skycoin node is up, run the following command to start the live tests:
 
 ```sh
-./ci-scripts/integration-test.live.sh -v
+make integration-test-live
 ```
 
-The above command will run all tests except the wallet related tests. To run wallet tests, we
+The above command will run all tests except the wallet-related tests. To run wallet tests, we
 need to manually specify a wallet file, and it must have at least `2 coins` and `256 coinhours`,
 it also must have been loaded by the node.
 
@@ -372,18 +387,38 @@ If the wallet is encrypted, also set `WALLET_PASSWORD`.
 export WALLET_DIR="$HOME/.skycoin/wallets"
 export WALLET_NAME="$valid_wallet_filename"
 export WALLET_PASSWORD="$wallet_password"
+/run-client.sh -launch-browser=false -enable-all-api-sets
 ```
 
 Then run the tests with the following command:
 
 ```sh
-make integration-test-live
+make integration-test-live-wallet
 ```
 
-or
+There are two other live integration test modes for CSRF disabled and networking disabled.
+
+To run the CSRF disabled tests:
 
 ```sh
-./ci-scripts/integration-test-live.sh -v -w
+./run-daemon.sh -disable-csrf
+```
+
+```sh
+make integration-test-live-disable-csrf
+```
+
+To run the networking disabled tests, which requires a live wallet:
+
+```sh
+./run-client.sh -disable-networking -launch-browser=false
+```
+
+```sh
+export WALLET_DIR="$HOME/.skycoin/wallets"
+export WALLET_NAME="$valid_wallet_filename"
+export WALLET_PASSWORD="$wallet_password"
+make integration-test-live-disable-networking
 ```
 
 #### Debugging Integration Tests
@@ -495,6 +530,29 @@ go tool pprof http://localhost:6060/debug/pprof/heap
 
 A web page interface is provided by http/pprof at http://localhost:6060/debug/pprof/.
 
+### Fuzzing
+
+Fuzz tests are run with [go-fuzz](https://github.com/dvyukov/go-fuzz).
+[Follow the instructions on the go-fuzz page](https://github.com/dvyukov/go-fuzz) to install it.
+
+Fuzz tests are written for the following packages:
+
+#### base58
+
+To fuzz the `cipher/base58` package,
+
+```sh
+make fuzz-base58
+```
+
+#### encoder
+
+To fuzz the `cipher/encoder` package,
+
+```sh
+make fuzz-encoder
+```
+
 ### Dependencies
 
 #### Rules
@@ -598,10 +656,10 @@ Instructions for doing this:
 
 0. If the `master` branch has commits that are not in `develop` (e.g. due to a hotfix applied to `master`), merge `master` into `develop`
 0. Compile the `src/gui/static/dist/` to make sure that it is up to date (see [Wallet GUI Development README](src/gui/static/README.md))
-0. Update all version strings in the repo (grep for them) to the new version
-0. If changes require a new database verification on the next upgrade, update `src/skycoin/skycoin.go`'s `dbVerifyCheckpointVersion`	value
+0. Update version strings to the new version in the following files: `electron/package-lock.json`, `electron/package.json`, `electron/skycoin/current-skycoin.json`, `src/cli/cli.go`, `src/gui/static/src/current-skycoin.json`, `src/cli/integration/testdata/status*.golden`, `template/coin.template`, `README.md` files .
+0. If changes require a new database verification on the next upgrade, update `src/skycoin/skycoin.go`'s `DBVerifyCheckpointVersion` value
 0. Update `CHANGELOG.md`: move the "unreleased" changes to the version and add the date
-0. Update files in `docker/images/mainnet/repo-info/remote/`, adding a new file for the new version and adjusting any configuration text that may have changed
+0. Update the files in https://github.com/skycoin/repo-info by following the [metadata update procedure](https://github.com/skycoin/repo-info/#updating-skycoin-repository-metadate),
 0. Merge these changes to `develop`
 0. Follow the steps in [pre-release testing](#pre-release-testing)
 0. Make a PR merging `develop` into `master`
@@ -620,8 +678,12 @@ For example, `v0.20.0` becomes `v0.20.1`, for minor fixes.
 Performs these actions before releasing:
 
 * `make check`
-* `make integration-test-live` (see [live integration tests](#live-integration-tests)) both with an unencrypted and encrypted wallet, and once with `-networking-disabled`
-* `go run cmd/cli/cli.go checkdb` against a synced node
+* `make integration-test-live`
+* `make integration-test-live-disable-networking` (requires node run with `-disable-networking`)
+* `make integration-test-live-disable-csrf` (requires node run with `-disable-csrf`)
+* `make intergration-test-live-wallet` (see [live integration tests](#live-integration-tests)) both with an unencrypted and encrypted wallet
+* `go run cmd/cli/cli.go checkdb` against a fully synced database
+* `go run cmd/cli/cli.go checkDBDecoding` against a fully synced database
 * On all OSes, make sure that the client runs properly from the command line (`./run-client.sh` and `./run-daemon.sh`)
 * Build the releases and make sure that the Electron client runs properly on Windows, Linux and macOS.
     * Use a clean data directory with no wallets or database to sync from scratch and verify the wallet setup wizard.

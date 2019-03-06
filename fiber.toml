@@ -11,11 +11,14 @@ genesis_timestamp = 1426562704
 default_connections = [
     "118.178.135.93:6000",
     "47.88.33.156:6000",
-    "121.41.103.148:6000",
     "104.237.142.206:6000",
     "176.58.126.224:6000",
     "172.104.85.6:6000",
     "139.162.7.132:6000",
+    "139.162.39.186:6000",
+    "45.33.111.142:6000",
+    "109.237.27.172:6000",
+    "172.104.41.14:6000",
 ]
 peer_list_url = "https://downloads.skycoin.net/blockchain/peers.txt"
 # port = 6000
@@ -26,7 +29,7 @@ peer_list_url = "https://downloads.skycoin.net/blockchain/peers.txt"
 # create_block_burn_factor = 2
 # create_block_max_transaction_size = 32 * 1024
 # create_block_max_decimals = 3
-# max_block_size = 32 * 1024
+# max_block_transactions_size = 32 * 1024
 
 [params]
 # max_coin_supply = 1e8

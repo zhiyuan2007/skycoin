@@ -120,7 +120,7 @@ func TestVerifyAddress(t *testing.T) {
 			rr := httptest.NewRecorder()
 			cfg := defaultMuxConfig()
 			cfg.disableCSRF = tc.csrfDisabled
-			handler := newServerMux(cfg, gateway, nil)
+			handler := newServerMux(cfg, gateway)
 			handler.ServeHTTP(rr, req)
 
 			status := rr.Code
@@ -143,7 +143,6 @@ func TestVerifyAddress(t *testing.T) {
 
 				require.Equal(t, tc.httpResponse.Data.(VerifyAddressResponse), addrRsp)
 			}
-
 		})
 	}
 }

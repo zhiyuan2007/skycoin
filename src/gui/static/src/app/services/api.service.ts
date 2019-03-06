@@ -7,7 +7,6 @@ import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/map';
 import { TranslateService } from '@ngx-translate/core';
 import { BigNumber } from 'bignumber.js';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 
 import {
   Address, GetWalletsResponseEntry, GetWalletsResponseWallet, NormalTransaction,
@@ -17,7 +16,6 @@ import {
 @Injectable()
 export class ApiService {
   private url = environment.nodeUrl;
-  private gettingCsrf: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
   constructor(
     private http: Http,
@@ -63,6 +61,7 @@ export class ApiService {
                 address: entry.address,
                 coins: null,
                 hours: null,
+                confirmed: true,
               };
             }),
             encrypted: wallet.meta.encrypted,
@@ -92,7 +91,7 @@ export class ApiService {
           filename: response.meta.filename,
           coins: null,
           hours: null,
-          addresses: response.entries.map(entry => ({ address: entry.address, coins: null, hours: null })),
+          addresses: response.entries.map(entry => ({ address: entry.address, coins: null, hours: null, confirmed: true })),
           encrypted: response.meta.encrypted,
         }));
   }
@@ -127,21 +126,7 @@ export class ApiService {
   }
 
   getCsrf() {
-    return this.gettingCsrf.filter(response => !response).first().flatMap(() => {
-      this.gettingCsrf.next(true);
-
-      return this.get('csrf')
-        .map(response => {
-          setTimeout(() => this.gettingCsrf.next(false));
-
-          return response.csrf_token;
-        })
-        .catch((error: any) => {
-          setTimeout(() => this.gettingCsrf.next(false));
-
-          return error;
-        });
-    });
+    return this.get('csrf').map(response => response.csrf_token);
   }
 
   post(url, params = {}, options: any = {}, useV2 = false) {
